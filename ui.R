@@ -76,16 +76,9 @@ function(request){
                            box(title = "Problem Type Frequency", width = NULL, solidHeader = TRUE, collapsible = TRUE,
                                highchartOutput("ptbar", height = 130)),
                            box(title = "Frequency by Day", width = NULL, solidHeader = TRUE, collapsible = TRUE,
-                               highchartOutput("weekcol", height = 110)),
+                               highchartOutput("weekcol", height = 100)),
                            box(title = "Bike Parking Demand by Time of Day (24h)", width = NULL, solidHeader = TRUE, collapsible = TRUE,
-                               highchartOutput("heat_map", height = 110),
-                               bsButton("q1", label = "", icon = icon("question"),
-                                        style = "info", size = "extra-small")),
-                           bsPopover(id = "q1", title = "Note:",
-                                     content = "Long represents parking for 3+ hours, Medium represents parking for 1-3 hours, Short represents parking for less than 1 hour. Time rounded to the nearest hour",
-                                     placement = "right", 
-                                     trigger = "focus",
-                                     options = list(container = "body"))
+                               highchartOutput("heat_map", height = 140))
                     ),
                     column(width = 9,
                            box(title = NULL, width = NULL, solidHeader = TRUE,

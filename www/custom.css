@@ -105,4 +105,5 @@ h3  {
 .small-box.bg-green { 
               background-color: #11bb52 !important; 
               color: #ffffff !important; 
+              height: 120px;
 }

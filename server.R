@@ -369,11 +369,12 @@ function(input, output, session) {
   ##-- Time v Duration Heat Map --##
   
   # Generate dataframe with all possible time v. duration combinations
-  hours <- c("07-09", "10-12", "13-15", "16-18", "19+")
-  heat_hours <- sort(rep(hours,3))
-  heat_duration <- rep(c("short", "med", "long"), 5)
+  hours <- c("07-10", "10-13", "13-16", "16-19", "19+")
+  heat_hours <- sort(rep(hours,4))
+  heat_duration <- rep(c("minutes", "hours", "days", "overnight"), 5)
   
   heat_df <- data.frame(heat_hours, heat_duration)
+  heat_df$heat_duration <- factor(heat_df$heat_duration, levels = c("overnight", "days", "hours", "minutes"))
   colnames(heat_df) <- c("time_group", "duration")
   
   # Create frequency count by hour and parking duration from data, dropping NAs
@@ -392,20 +393,18 @@ function(input, output, session) {
   
   heat_data_2 <- reactive({
     heat_data() %>%
-      replace_na(list(time_group = NA, duration = NA, count = 0)) %>%
-      arrange(factor(time_group, levels = c("07-09", "10-12", "13-15", "16-18", "19+")), 
-              factor(duration, levels = c("short", "med", "long")))
+      replace_na(list(time_group = NA, duration = NA, count = 0))
   })
   
   # Prepare values for the axes of the heat map
-  y <- c("Short", "Medium", "Long")
-  x <- c("07-09", "10-12", "13-15", "16-18", "19+")
+  y <- c("Overnight", "Days", "Hours", "Minutes")
+  x <- c("07-10", "10-13", "13-16", "16-19", "19+")
   
   # Convert the dataframe to a series for plotting
   heat_data_series <- reactive({
     heat_data_2() %>%
-      mutate(yid = rep(c(0,1,2),5),
-             xid = sort(rep(seq(1:5)-1,3))) %>%
+      mutate(yid = rep(c(0,1,2,3),5),
+             xid = sort(rep(seq(1:5)-1,4))) %>%
       select(xid, yid, count) %>%
       list.parse2()
   })
