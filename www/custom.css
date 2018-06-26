@@ -107,3 +107,16 @@ h3  {
               color: #ffffff !important; 
               height: 120px;
 }
+
+.shiny-progress .progress {
+    position: absolute;
+    width: 150%;
+    top: 0px;
+    height: 8px;
+    margin: 0px;
+}
+
+.shiny-progress-notification .progress-bar{
+              background-color: #11bb52;
+              .opacity = 0.8;
+}

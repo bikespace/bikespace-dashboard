@@ -32,7 +32,9 @@ date_range <- paste(params$date_1, "-", params$date_2, sep = " ")
 
 prob_input <- paste(params$prob_input, collapse="; ")
 
-input_user <- list(date_range, params$dur_input, prob_input, params$street_input,
+dur_input <- paste(params$dur_input, collapse="; ")
+
+input_user <- list(date_range, dur_input, prob_input, params$street_input,
                    params$intersection_input, report_num)
 
 input_df <- cbind(input_names, input_user)
@@ -54,10 +56,19 @@ kable(input_df)
 library(leaflet)
 library(htmltools)
 
-devtools::install_github("wch/webshot")
-webshot::install_phantomjs()
+if(!require(webshot)){
+    devtools::install_github("wch/webshot")
+    webshot::install_phantomjs()
+}
 
 prob_choices <- nrow(data.frame(unlist(params$data[,"problem_type"])))
+
+# Create bikespace icon for map
+  bikespaceIcon <- makeIcon(
+    iconUrl = "https://s3.amazonaws.com/bikespace-dashboard-assets/pins/DB_Logo_Pin.png",
+    iconWidth = 25, iconHeight = 25,
+    iconAnchorX = 0, iconAnchorY = 0
+  )
 
 # Parameters for MapBox basemap
 street_map <- "https://api.mapbox.com/styles/v1/arielag/cjhl8uwjg084r2sopg0stjoob/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYXJpZWxhZyIsImEiOiJjamY1dTlseDYxZHB0Mnlsbndsb3BkaTV5In0.SiiSe0JU0cXc6sqeLA4Hcg"
@@ -67,7 +78,7 @@ map_attr <- "© <a href='https://www.mapbox.com/map-feedback/'>Mapbox</a>"
 if(prob_choices > 0){
       m1 <- leaflet(params$data) %>% 
         addTiles(urlTemplate = street_map, attribution = map_attr) %>%
-        addMarkers(lng = ~problem_long, lat = ~problem_lat, 
+        addMarkers(lng = ~problem_long, lat = ~problem_lat, icon = bikespaceIcon,
                    clusterOptions = markerClusterOptions()) %>%
         setView(lng = -79.3892, lat = 43.6426, zoom = params$zoom)
     } else{

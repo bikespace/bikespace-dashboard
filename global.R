@@ -16,6 +16,8 @@ library("rmarkdown")
 library("webshot")
 library("shinyBS")
 library("shinyjs")
+library("shinyWidgets")
+library("ggplot2")
 
 ##-- Retrieve and clean data --##
 
@@ -53,6 +55,13 @@ survey_data <- survey_data[survey_data$date <= Sys.Date(),]
 
 # Drop happening and datetime variables
 survey_data <- survey_data[, !(colnames(survey_data) %in% c("survey.happening", "datetime"))]
+
+# TEMPORARY SOLUTION FOR PROBLEM_TYPE, CHANGE WHEN UX SET
+# Remove problem types not part of current app, and take out NULL values
+prob_type_exclude <- c("badly", "vandalized", "broken", "unusable")
+
+survey_data <- survey_data[!grepl(paste(prob_type_exclude, collapse="|"), survey_data$survey.problem_type) 
+                           & survey_data$survey.problem_type != "NULL",]
 
 # Clean problem_type field so that lists (multiple problem types) in the field are
 # strings

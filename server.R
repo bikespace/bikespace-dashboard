@@ -1,22 +1,3 @@
-library("shiny")
-library("shinydashboard")
-library("RCurl")
-library("jsonlite")
-library("highcharter")
-library("rvest")
-library("purrr")
-library("tidyr")
-library("dplyr")
-library("leaflet")
-library("htmltools")
-library("stringr")
-library("RColorBrewer")
-library("rmarkdown")
-library("webshot")
-library("shinyBS")
-library("shinyjs")
-library("shinyWidgets")
-library("ggplot2")
 
 function(input, output, session) {
   
@@ -92,6 +73,7 @@ function(input, output, session) {
     updatePickerInput(session, "probtype_select", choices = unique(unlist(survey_data$problem_type)))
   })
   
+  # Create error message if dates are blank
   observeEvent(input$filter_click,{
     if(!isTruthy(input$daterange)){
       showNotification("Please enter a valid date range", type = "error", 
@@ -162,6 +144,13 @@ function(input, output, session) {
   ) %>% lapply(htmltools::HTML)
   })
   
+  # Create bikespace icon for map
+  bikespaceIcon <- makeIcon(
+    iconUrl = "https://s3.amazonaws.com/bikespace-dashboard-assets/pins/DB_Logo_Pin.png",
+    iconWidth = 25, iconHeight = 25,
+    iconAnchorX = 0, iconAnchorY = 0
+  )
+  
   # Parameters for MapBox basemap
   street_map <- "https://api.mapbox.com/styles/v1/arielag/cjhl8uwjg084r2sopg0stjoob/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYXJpZWxhZyIsImEiOiJjamY1dTlseDYxZHB0Mnlsbndsb3BkaTV5In0.SiiSe0JU0cXc6sqeLA4Hcg"
   
@@ -172,7 +161,7 @@ function(input, output, session) {
       leaflet(values$data) %>% 
         addTiles(urlTemplate = street_map, attribution = map_attr) %>%
         #addProviderTiles(providers$CartoDB.Positron) %>%
-        addMarkers(lng = ~problem_long, lat = ~problem_lat, 
+        addMarkers(lng = ~problem_long, lat = ~problem_lat, icon = bikespaceIcon,
                    clusterOptions = markerClusterOptions(), label=marker_labels()) %>%
         setView(lng = -79.3892, lat = 43.6426, zoom = 12)
     } else{
@@ -458,27 +447,30 @@ function(input, output, session) {
   )
   
   output$pdf_download <- downloadHandler(
-    # For PDF output, change this to "report.pdf"
     filename = "report.pdf",
     content = function(file) {
-      # Copy the report file to a temporary directory before processing it, in
-      # case we don't have write permissions to the current working dir (which
-      # can happen when deployed).
-      tempReport <- file.path(tempdir(), "report.Rmd")
-      file.copy("report.Rmd", tempReport, overwrite = TRUE)
-      
-      # Set up parameters to pass to Rmd document
-      params <- list(date_1 = input$daterange[1], date_2 = input$daterange[2],
-                     dur_input = input$duration_select, prob_input = input$probtype_select,
-                     street_input = input$street_name, intersection_input = input$intersection_name,
-                     data = values$data, zoom = user_zoom())
-      
-      # Knit the document
-      rmarkdown::render(tempReport, output_file = file,
-                        params = params,
-                        envir = new.env(parent = globalenv())
-      )
+      withProgress(message = 'Generating PDF report',{
+        setProgress(value = 0.2)
+        # Copy the report file to a temporary directory before processing it, in
+        # case we don't have write permissions to the current working dir
+        tempReport <- file.path(tempdir(), "report.Rmd")
+        file.copy("report.Rmd", tempReport, overwrite = TRUE)
+        
+        setProgress(value = 0.3)
+        # Set up parameters to pass to Rmd document
+        params <- list(date_1 = input$daterange[1], date_2 = input$daterange[2],
+                       dur_input = input$duration_select, prob_input = input$probtype_select,
+                       street_input = input$street_name, intersection_input = input$intersection_name,
+                       data = values$data, zoom = user_zoom())
+        
+        setProgress(value = 0.7, detail = "~10 seconds")
+        # Knit the document
+        rmarkdown::render(tempReport, output_file = file,
+                          params = params,
+                          envir = new.env(parent = globalenv())
+        )
+      })
     }
   )
   
-  }
+}
