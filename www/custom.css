@@ -109,11 +109,11 @@ h3  {
 }
 
 .shiny-progress .progress {
-    position: absolute;
-    width: 150%;
-    top: 0px;
-    height: 8px;
-    margin: 0px;
+              position: absolute;
+              width: 150%;
+              top: 0px;
+              height: 8px;
+              margin: 0px;
 }
 
 .shiny-progress-notification .progress-bar{

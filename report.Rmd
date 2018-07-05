@@ -26,7 +26,7 @@ knitr::opts_chunk$set(message = FALSE, echo = FALSE, warning = FALSE)
 #------------------------#
 
 # Create dataframe of inputs
-input_names <- list("Date Range", "Parking Duration", "Problem Type", "Street",
+input_names <- list("Date Range", "Duration Length", "Issue Type", "Street",
                     "Intersection", "Total Number of Reports")
 
 report_num <- nrow(params$data)
@@ -94,7 +94,7 @@ m1
 
 ```
 
-## Problem Type Frequency
+## Number of Reports by Issue
 
 ```{r}
 #------------------------#
@@ -104,7 +104,7 @@ m1
 library(ggplot2)
 library(dplyr)
 
-unlist_df <- data.frame(unlist(params$data[,"problem_type"]))
+unlist_df <- data.frame(capitalize(unlist(params$data[,"problem_type"])))
 
 probtype_df <- if(nrow(unlist_df) > 0){
       colnames(unlist_df) <- c("problem_type")
@@ -182,7 +182,7 @@ bar_chart <- ggplot(ptbar_data, aes(name,y, fill = color, label = y)) +
 bar_chart
 ```
 
-## Frequency By Day
+## Number of Reports By Day
 
 ```{r}
 #------------------------#
@@ -249,7 +249,7 @@ weekcol_chart <- if(days_range > 5){
 weekcol_chart
 ```
 
-## Type of Bike Parking Demand by Time of Day (24h)
+## Desired Parking Duration by Hour
 
 ```{r}
 #------------------------#
@@ -259,9 +259,9 @@ weekcol_chart
 library(scales)
 
 # Generate dataframe with all possible time v. duration combinations
-hours <- c("07-10", "10-13", "13-16", "16-19", "19+")
+hours <- c("07-10", "10-13", "13-16", "16-19", "19-07")
 heat_hours <- sort(rep(hours,4))
-heat_duration <- rep(c("minutes", "hours", "days", "overnight"), 5)
+heat_duration <- rep(c("Minutes", "Hours", "Days", "Overnight"), 5)
   
 heat_df <- data.frame(heat_hours, heat_duration)
 colnames(heat_df) <- c("time_group", "duration")
@@ -279,11 +279,6 @@ heat_data <- merge(heat_df, heat_count, all.x = TRUE, by=c("time_group", "durati
 heat_data_2 <- heat_data %>%
       replace_na(list(time_group = NA, duration = NA, count = 0))
   
-# Rename duration values for heat map axis
-heat_data_2$duration <- if_else(heat_data_2$duration == "minutes", "Minutes",
-                          if_else(heat_data_2$duration == "hours", "Hours",
-                            if_else(heat_data_2$duration == "days", "Days", "Overnight")))
-
 # Set up as factor variable
 heat_data_2$duration <- factor(heat_data_2$duration, levels = c("Overnight", "Days", "Hours", "Minutes"))
 
@@ -298,13 +293,14 @@ col_values = c('#ffffff','#46e08c', '#f2f200','#fcb600', '#ff3300','#ff0000')
 heat_map <- ggplot(heat_data_2, aes(x = time_group, y = duration)) + 
   geom_tile(aes(fill = count)) + 
   coord_equal() +
+  xlab("24 hour time") +
   scale_fill_gradientn(colours= col_values,
                        values=rescale(heat_col_breaks),
                        guide="colorbar") +
   geom_text(aes(label = count), size=3.5) +
   theme_minimal() +
   theme(legend.position="none",
-        axis.title = element_blank(),
+        axis.title.y = element_blank(),
         panel.grid = element_blank())
 
 heat_map

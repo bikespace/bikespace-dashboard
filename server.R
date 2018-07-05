@@ -12,7 +12,7 @@ function(input, output, session) {
   })
   
   probtype_choices <- reactive({
-    unique(unlist(survey_data[survey_data$date >= input$daterange[1] & survey_data$date <= input$daterange[2] & grepl(paste(input$duration_select, collapse = "|"),survey_data$duration), "problem_type"]))
+    unique(capitalize(unlist(survey_data[survey_data$date >= input$daterange[1] & survey_data$date <= input$daterange[2] & grepl(paste(input$duration_select, collapse = "|"),survey_data$duration), "problem_type"])))
   })
   
   observe({
@@ -70,7 +70,7 @@ function(input, output, session) {
     reset("form")
     values$data <- survey_data
     updatePickerInput(session, "duration_select", choices = unique(survey_data$duration))
-    updatePickerInput(session, "probtype_select", choices = unique(unlist(survey_data$problem_type)))
+    updatePickerInput(session, "probtype_select", choices = unique(capitalize(unlist(survey_data$problem_type))))
   })
   
   # Create error message if dates are blank
@@ -160,21 +160,28 @@ function(input, output, session) {
     if(prob_choices() > 0){
       leaflet(values$data) %>% 
         addTiles(urlTemplate = street_map, attribution = map_attr) %>%
-        #addProviderTiles(providers$CartoDB.Positron) %>%
         addMarkers(lng = ~problem_long, lat = ~problem_lat, icon = bikespaceIcon,
-                   clusterOptions = markerClusterOptions(), label=marker_labels()) %>%
+                   clusterOptions = markerClusterOptions(showCoverageOnHover = FALSE), 
+                   label= marker_labels(), 
+                   labelOptions = labelOptions(noHide = F, textsize = "12px",
+                                  style = list("background-color" = "rgba(242,242,242,0.45)",
+                                               "color" = "#4d4d4d",
+                                               "box-shadow" = "3px 3px rgba(0,0,0,0.25)",
+                                               "border-color" = "rgba(17,187,82,0.5)",
+                                               "padding" = "9px",
+                                               "border-width" = "thin")),
+                   options = markerOptions(riseOnHover = TRUE)) %>%
         setView(lng = -79.3892, lat = 43.6426, zoom = 12)
     } else{
       leaflet() %>% 
         addTiles(urlTemplate = street_map, attribution = map_attr) %>%
-        #addProviderTiles(providers$CartoDB.Positron) %>%
         setView(lng = -79.3892, lat = 43.6426, zoom = 12)
     }
   })
   
   ##-- Problem Type Bar Chart --#
   probtype_df <- reactive({
-    unlist_df <- data.frame(unlist(values$data[,"problem_type"]))
+    unlist_df <- data.frame(capitalize(unlist(values$data[,"problem_type"])))
     if(nrow(unlist_df) > 0){
       colnames(unlist_df) <- c("problem_type")
       unlist_df %>%
@@ -290,7 +297,7 @@ function(input, output, session) {
   
   # Convert the dataframe to a series for plotting
   weekcol_chart_data <- reactive({
-    if(days_range() > 5){
+    if(days_range() > 3){
       weekcol_df2() %>%
         replace_na(list(weekday = NA, n = 0)) %>%
         arrange(factor(weekday, levels = c("Sun", "Mon", "Tue", "Wed",
@@ -313,7 +320,7 @@ function(input, output, session) {
   
   # Create the frequency plot
   output$weekcol <- renderHighchart({
-    if(days_range() > 5 | days_range() == -Inf){
+    if(days_range() > 3 | days_range() == -Inf){
       highchart() %>% 
         hc_xAxis(type="category", lineColor = "#ffffff", tickColor = "#ffffff") %>%
         hc_yAxis(title = "Blank", visible = FALSE) %>% 
@@ -329,7 +336,7 @@ function(input, output, session) {
         )
     } else{
       highchart() %>%
-        hc_xAxis(type = "datetime", dateTimeLabelFormats = list(day = '%d of %b'), 
+        hc_xAxis(type = "datetime", dateTimeLabelFormats = list(day = '%b %d'), 
                  lineColor = "#ffffff", tickColor = "#ffffff") %>%
         hc_yAxis(title = "Blank", visible = FALSE) %>%
         hc_add_series(weekcol_chart_data(), "column", hcaes(date, n), 
@@ -349,12 +356,12 @@ function(input, output, session) {
   ##-- Time v Duration Heat Map --##
   
   # Generate dataframe with all possible time v. duration combinations
-  hours <- c("07-10", "10-13", "13-16", "16-19", "19+")
+  hours <- c("07-10", "10-13", "13-16", "16-19", "19-07")
   heat_hours <- sort(rep(hours,4))
-  heat_duration <- rep(c("minutes", "hours", "days", "overnight"), 5)
+  heat_duration <- rep(c("Minutes", "Hours", "Days", "Overnight"), 5)
   
   heat_df <- data.frame(heat_hours, heat_duration)
-  heat_df$heat_duration <- factor(heat_df$heat_duration, levels = c("overnight", "days", "hours", "minutes"))
+  heat_df$heat_duration <- factor(heat_df$heat_duration, levels = c("Overnight", "Days", "Hours", "Minutes"))
   colnames(heat_df) <- c("time_group", "duration")
   
   # Create frequency count by hour and parking duration from data, dropping NAs
@@ -378,7 +385,7 @@ function(input, output, session) {
   
   # Prepare values for the axes of the heat map
   y <- c("Overnight", "Days", "Hours", "Minutes")
-  x <- c("07-10", "10-13", "13-16", "16-19", "19+")
+  x <- c("07-10", "10-13", "13-16", "16-19", "19-07")
   
   # Convert the dataframe to a series for plotting
   heat_data_series <- reactive({
@@ -409,7 +416,8 @@ function(input, output, session) {
   output$heat_map <- renderHighchart({
     highchart() %>% 
       hc_chart(type = "heatmap") %>% 
-      hc_xAxis(categories = x) %>% 
+      hc_xAxis(categories = x, title = list(text = "24 hour time", 
+                                            offset = 0, rotation = 0, y = 42)) %>% 
       hc_yAxis(categories = y) %>% 
       hc_add_series(data = heat_data_series()) %>% 
       hc_plotOptions(
@@ -427,7 +435,8 @@ function(input, output, session) {
   ##-- Export Data --##
   
   df_csv <- reactive({
-    values$data[, !(colnames(values$data) %in% c("problem_type"))]
+    values$data[, c("problem_type_collapse", "duration", "date", "weekday", "hour", 
+                    "time_group", "problem_lat", "problem_long", "comment")]
   })
   
   output$csv_download <- downloadHandler(
