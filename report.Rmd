@@ -1,0 +1,311 @@
+---
+title: "BikeSpace Dashboard Report"
+output: 
+  pdf_document:
+    keep_tex: yes
+always_allow_html: yes
+params:
+  data: NA
+  date_1: NA
+  date_2: NA
+  dur_input: NA
+  prob_input: NA
+  street_input: NA
+  intersection_input: NA
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, echo = FALSE, warning = FALSE)
+```
+
+## Data Filters Applied
+
+```{r}
+#------------------------#
+#    User Input Table    #
+#------------------------#
+
+# Create dataframe of inputs
+input_names <- list("Date Range", "Duration Length", "Issue Type", "Street",
+                    "Intersection", "Total Number of Reports")
+
+report_num <- nrow(params$data)
+
+date_range <- paste(params$date_1, "-", params$date_2, sep = " ")
+
+prob_input <- paste(params$prob_input, collapse="; ")
+
+dur_input <- paste(params$dur_input, collapse="; ")
+
+input_user <- list(date_range, dur_input, prob_input, params$street_input,
+                   params$intersection_input, report_num)
+
+input_df <- cbind(input_names, input_user)
+colnames(input_df) <- c("Data Filters", "User Input")
+```
+
+```{r, results='asis'}
+library(knitr)
+kable(input_df)
+```
+
+## User Submitted Issues
+
+```{r}
+#------------------------#
+#         Map            #
+#------------------------#
+
+library(leaflet)
+library(htmltools)
+
+if(!require(webshot)){
+    devtools::install_github("wch/webshot")
+    webshot::install_phantomjs()
+}
+
+prob_choices <- nrow(data.frame(unlist(params$data[,"problem_type"])))
+
+# Create bikespace icon for map
+  bikespaceIcon <- makeIcon(
+    iconUrl = "https://s3.amazonaws.com/bikespace-dashboard-assets/pins/DB_Logo_Pin.png",
+    iconWidth = 25, iconHeight = 25,
+    iconAnchorX = 0, iconAnchorY = 0
+  )
+
+# Parameters for MapBox basemap
+street_map <- "https://api.mapbox.com/styles/v1/arielag/cjhl8uwjg084r2sopg0stjoob/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYXJpZWxhZyIsImEiOiJjamY1dTlseDYxZHB0Mnlsbndsb3BkaTV5In0.SiiSe0JU0cXc6sqeLA4Hcg"
+  
+map_attr <- "© <a href='https://www.mapbox.com/map-feedback/'>Mapbox</a>"
+
+if(prob_choices > 0){
+      m1 <- leaflet(params$data) %>% 
+        addTiles(urlTemplate = street_map, attribution = map_attr) %>%
+        addMarkers(lng = ~problem_long, lat = ~problem_lat, icon = bikespaceIcon,
+                   clusterOptions = markerClusterOptions()) %>%
+        setView(lng = -79.3892, lat = 43.6426, zoom = 11)
+    } else{
+      m1 <- leaflet() %>% 
+        addTiles(urlTemplate = street_map, attribution = map_attr) %>%
+        setView(lng = -79.3892, lat = 43.6426, zoom = 11)
+    }
+
+m1
+
+```
+
+## Number of Reports by Issue
+
+```{r}
+#------------------------#
+#   Problem Type Chart   #
+#------------------------#
+
+library(ggplot2)
+library(dplyr)
+
+unlist_df <- data.frame(capitalize(unlist(params$data[,"problem_type"])))
+
+probtype_df <- if(nrow(unlist_df) > 0){
+      colnames(unlist_df) <- c("problem_type")
+      unlist_df %>%
+        count(problem_type) %>%
+        arrange(desc(n)) %>%
+        slice(1:6)
+    } else{
+      return()
+    }
+  
+n_colors <- nrow(probtype_df)
+
+ptbar_data <- if(prob_choices > 0){
+      if(n_colors == 6){
+        probtype_df %>%
+          mutate(x = row_number()) %>%
+          mutate(color = c("#ff0000", "#ff3300", "#fcb600", "#f2f200", "#9ba39d", "#46e08c")) %>%
+          rename(name = problem_type,
+                 y = n) %>% 
+          select(y, name, color)
+      } else if(n_colors == 5){
+        probtype_df %>%
+          mutate(x = row_number()) %>%
+          mutate(color = c("#ff0000", "#ff3300", "#fcb600", "#f2f200", "#46e08c")) %>%
+          rename(name = problem_type,
+                 y = n) %>% 
+          select(y, name, color)
+      } else if(n_colors == 4){
+        probtype_df %>%
+          mutate(x = row_number()) %>%
+          mutate(color = c("#ff0000", "#fcb600", "#f2f200", "#46e08c")) %>%
+          rename(name = problem_type,
+                 y = n) %>% 
+          select(y, name, color)
+      } else if(n_colors == 3){
+        probtype_df %>%
+          mutate(x = row_number()) %>%
+          mutate(color = c("#ff0000", "#f2f200", "#46e08c")) %>%
+          rename(name = problem_type,
+                 y = n) %>% 
+          select(y, name, color)
+      } else if(n_colors == 2){
+        probtype_df %>%
+          mutate(x = row_number()) %>%
+          mutate(color = c("#ff3300", "#46e08c")) %>%
+          rename(name = problem_type,
+                 y = n) %>% 
+          select(y, name, color)
+      } else{
+        probtype_df %>%
+          mutate(x = row_number()) %>%
+          mutate(color = c("#00cb47")) %>%
+          rename(name = problem_type,
+                 y = n) %>% 
+          select(y, name, color)
+      }
+    } else{
+      return()
+    }
+
+ptbar_data$name <- factor(ptbar_data$name, levels = ptbar_data$name[order(ptbar_data$y)], ordered = TRUE)
+
+bar_chart <- ggplot(ptbar_data, aes(name,y, fill = color, label = y)) +
+  geom_bar(stat = 'identity', width = 0.4) +
+  geom_text(nudge_y = mean(ptbar_data$y)*0.10) +
+  scale_fill_manual(values = rev(ptbar_data$color)) +
+  theme_minimal() +
+  theme(legend.position="none",
+        axis.title = element_blank(),
+        panel.grid = element_blank(),
+        axis.text.x = element_blank()) +
+  coord_flip()
+
+bar_chart
+```
+
+## Number of Reports By Day
+
+```{r}
+#------------------------#
+#  Daily Frequency Chart #
+#------------------------#
+
+weekcol_df <- data.frame(c("Sun", "Mon", "Tue", "Wed",
+                             "Thu", "Fri", "Sat"))
+colnames(weekcol_df) <- c("weekday")
+  
+# Create frequency count from data by weekday, dropping NAs
+weekcol_data <- params$data %>%
+      count(weekday) %>%
+      ungroup() %>%
+      drop_na()
+  
+# Join data with dataframe for all weekdays
+weekcol_df2 <- merge(weekcol_df, weekcol_data, all.x = TRUE, by=c("weekday"))
+  
+days_range <- max(params$data[,"date"], na.rm = TRUE) - min(params$data[,"date"], na.rm = TRUE)
+  
+# Convert the dataframe to a series for plotting
+weekcol_chart_data <- if(days_range > 5){
+      weekcol_df2 %>%
+        replace_na(list(weekday = NA, n = 0)) %>%
+        mutate(x = row_number()) %>%
+        mutate(color = c("#00cb47")) %>%
+        rename(name = weekday, 
+               y = n) %>% 
+        select(y, name, color) %>%
+        mutate(name = factor(name, levels = c("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")))
+    } else if(days_range > -Inf){
+      params$data %>%
+        count(date) %>%
+        mutate(color = c("#00cb47")) %>%
+        drop_na()
+    } else{
+      return()
+    }
+  
+# Create the frequency plot
+weekcol_chart <- if(days_range > 5){
+  ggplot(weekcol_chart_data, aes(name,y, fill = color, label = y)) +
+  geom_bar(stat = 'identity', width = 0.4) +
+  geom_text(nudge_y = mean(weekcol_chart_data$y)*0.15) +
+  scale_fill_manual(values = rev(weekcol_chart_data$color)) +
+  theme_minimal() +
+  theme(legend.position="none",
+        axis.title = element_blank(),
+        panel.grid = element_blank(),
+        axis.text.y = element_blank())
+  } else{
+  ggplot(weekcol_chart_data, aes(date,n, fill = color, label = n)) +
+  geom_bar(stat = 'identity', width = 0.9) +
+  geom_text(nudge_y = mean(weekcol_chart_data$n)*0.10) +
+  scale_fill_manual(values = rev(weekcol_chart_data$color)) +
+  theme_minimal() +
+  theme(legend.position="none",
+            axis.title = element_blank(),
+            panel.grid = element_blank(),
+            axis.text.y = element_blank())
+ }
+
+weekcol_chart
+```
+
+## Desired Parking Duration by Hour
+
+```{r}
+#------------------------#
+#       Heat Map         #
+#------------------------#
+
+library(scales)
+
+# Generate dataframe with all possible time v. duration combinations
+hours <- c("07-10", "10-13", "13-16", "16-19", "19-07")
+heat_hours <- sort(rep(hours,4))
+heat_duration <- rep(c("Minutes", "Hours", "Days", "Overnight"), 5)
+  
+heat_df <- data.frame(heat_hours, heat_duration)
+colnames(heat_df) <- c("time_group", "duration")
+  
+# Create frequency count by hour and parking duration from data, dropping NAs
+heat_count <- params$data %>%
+      group_by(time_group, duration) %>%
+      summarise(count = n()) %>%
+      ungroup() %>%
+      drop_na()
+  
+# Merge the frequncy count with the dataframe with all hours and parking duration combinations  
+heat_data <- merge(heat_df, heat_count, all.x = TRUE, by=c("time_group", "duration"))
+  
+heat_data_2 <- heat_data %>%
+      replace_na(list(time_group = NA, duration = NA, count = 0))
+  
+# Set up as factor variable
+heat_data_2$duration <- factor(heat_data_2$duration, levels = c("Overnight", "Days", "Hours", "Minutes"))
+
+# Create colour fill variable for heat map
+heat_col_breaks <- c(min(heat_data_2$count),max(heat_data_2$count)*0.2, 
+                     max(heat_data_2$count)*0.4, max(heat_data_2$count)*0.6, 
+                     max(heat_data_2$count)*0.8, max(heat_data_2$count))
+
+col_values = c('#ffffff','#46e08c', '#f2f200','#fcb600', '#ff3300','#ff0000')
+  
+# Create the heat map
+heat_map <- ggplot(heat_data_2, aes(x = time_group, y = duration)) + 
+  geom_tile(aes(fill = count)) + 
+  coord_equal() +
+  xlab("24 hour time") +
+  scale_fill_gradientn(colours= col_values,
+                       values=rescale(heat_col_breaks),
+                       guide="colorbar") +
+  geom_text(aes(label = count), size=3.5) +
+  theme_minimal() +
+  theme(legend.position="none",
+        axis.title.y = element_blank(),
+        panel.grid = element_blank())
+
+heat_map
+```
+
+
+
+
