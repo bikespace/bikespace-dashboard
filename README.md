@@ -6,7 +6,7 @@ of Toronto from [app.bikespace.ca](https://app.bikespace.ca/). Built using R Stu
 
 ## Structure
 
-The application consists of the global.R, ui.R, server.R, report.Rmd files and the www/ directory, which contains the BikeSpace logo and the custom.css file
+The application  is located in `bikespace-dashboard` directory and consists of the global.R, ui.R, server.R, report.Rmd files and the www/ directory, which contains the BikeSpace logo and the custom.css file
 
 ## Installation
 
