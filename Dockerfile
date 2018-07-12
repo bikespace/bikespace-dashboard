@@ -13,5 +13,7 @@ RUN apt-get update && apt-get install -y gnupg2 \
 RUN Rscript -e "install.packages(c('shiny', 'shinydashboard', 'RCurl', 'jsonlite', 'highcharter','rvest', 'purrr', 'tidyr', 'dplyr', 'stringr', 'leaflet', 'htmltools','RColorBrewer', 'rmarkdown', 'webshot', 'shinyBS', 'shinyjs', 'shinyWidgets','ggplot2', 'Hmisc'), repos='https://cran.rstudio.com/')" \
     && rm -rf /tmp/downloaded_packages/ /tmp/*.rds
 
-## assume shiny ap is in folder /bikespace-dashboard
+## assume shiny app is in folder /bikespace-dashboard
 COPY ./bikespace-dashboard /srv/shiny-server/bikespace-dashboard/
+
+COPY ./shiny-server.conf /etc/shiny-server/shiny-server.conf
