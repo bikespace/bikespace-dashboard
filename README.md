@@ -6,7 +6,7 @@ of Toronto from [app.bikespace.ca](https://app.bikespace.ca/). Built using R Stu
 
 ## Structure
 
-The application  is located in `bikespace-dashboard` directory and consists of the global.R, ui.R, server.R, report.Rmd files and the www/ directory, which contains the BikeSpace logo and the custom.css file
+The application  is located in `bikespace-dashboard` directory and consists of the [global.R](https://gitlab.com/bikespace/shiny-dashboard/blob/master/bikespace-dashboard/global.R), [ui.R](https://gitlab.com/bikespace/shiny-dashboard/blob/master/bikespace-dashboard/ui.R), [server.R](https://gitlab.com/bikespace/shiny-dashboard/blob/master/bikespace-dashboard/server.R), [report.Rmd](https://gitlab.com/bikespace/shiny-dashboard/blob/master/bikespace-dashboard/report.Rmd) files and the [www/](https://gitlab.com/bikespace/shiny-dashboard/tree/master/bikespace-dashboard/www) directory, which contains the [BikeSpace logo](https://gitlab.com/bikespace/shiny-dashboard/blob/master/bikespace-dashboard/www/header_logo.png) and the [custom.css](https://gitlab.com/bikespace/shiny-dashboard/blob/master/bikespace-dashboard/www/custom.css) file
 
 ## Installation
 
@@ -35,9 +35,9 @@ check.packages(packages)
 
 ### PDF export
 
-The PDF export functionality of application requires a LaTeX distribution and PhantomJS to be installed. 
+The PDF export functionality of the application requires a LaTeX distribution and [PhantomJS](http://phantomjs.org/) to be installed. 
 
-[MikTeX](https://miktex.org/) is our reccommended LaTeX distribution, while you can install PhantomJS through R by running ```r webshot::install_phantomjs() ```
+[MikTeX](https://miktex.org/) is our reccommended LaTeX distribution, while you can install PhantomJS through R by running ```webshot::install_phantomjs()```
 
 ## Launch
 
