@@ -32,6 +32,13 @@ packages <- c("shiny", "shinydashboard", "RCurl", "jsonlite", "igraph","highchar
 check.packages(packages)
 
 ```
+
+### PDF export
+
+The PDF export functionality of application requires a LaTeX distribution and PhantomJS to be installed. 
+
+[MikTeX](https://miktex.org/) is our reccommended LaTeX distribution, while you can install PhantomJS through R by running ```r webshot::install_phantomjs() ```
+
 ## Launch
 
 Launch the application by running the ```runApp()``` command within the working directory where the application files are located.
