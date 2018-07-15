@@ -12,6 +12,8 @@ params:
   prob_input: NA
   street_input: NA
   intersection_input: NA
+  zoom: NA
+  center: NA
 ---
 
 ```{r, include=FALSE}
@@ -26,7 +28,7 @@ knitr::opts_chunk$set(message = FALSE, echo = FALSE, warning = FALSE)
 #------------------------#
 
 # Create dataframe of inputs
-input_names <- list("Date Range", "Duration Length", "Issue Type", "Street",
+input_names <- list("Date Range", "Issue Type", "Duration Length", "Street",
                     "Intersection", "Total Number of Reports")
 
 report_num <- nrow(params$data)
@@ -37,7 +39,7 @@ prob_input <- paste(params$prob_input, collapse="; ")
 
 dur_input <- paste(params$dur_input, collapse="; ")
 
-input_user <- list(date_range, dur_input, prob_input, params$street_input,
+input_user <- list(date_range, prob_input, dur_input, params$street_input,
                    params$intersection_input, report_num)
 
 input_df <- cbind(input_names, input_user)
@@ -83,7 +85,7 @@ if(prob_choices > 0){
         addTiles(urlTemplate = street_map, attribution = map_attr) %>%
         addMarkers(lng = ~problem_long, lat = ~problem_lat, icon = bikespaceIcon,
                    clusterOptions = markerClusterOptions()) %>%
-        setView(lng = -79.3892, lat = 43.6426, zoom = 11)
+        setView(lng = params$center[1], lat = params$center[2], zoom = params$zoom)
     } else{
       m1 <- leaflet() %>% 
         addTiles(urlTemplate = street_map, attribution = map_attr) %>%

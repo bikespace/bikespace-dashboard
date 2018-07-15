@@ -3,20 +3,20 @@ function(input, output, session) {
   
   ## -- Sidebar Inputs -- ##
   
-  duration_choices <- reactive({
-    unique(survey_data[survey_data$date >= input$daterange[1] & survey_data$date <= input$daterange[2], "duration"])
-  })
-  
-  observe({
-    updatePickerInput(session, "duration_select", choices = c(duration_choices()))
-  })
-  
   probtype_choices <- reactive({
-    unique(capitalize(unlist(survey_data[survey_data$date >= input$daterange[1] & survey_data$date <= input$daterange[2] & grepl(paste(input$duration_select, collapse = "|"),survey_data$duration), "problem_type"])))
+    unique(capitalize(unlist(survey_data[survey_data$date >= input$daterange[1] & survey_data$date <= input$daterange[2], "problem_type"])))
   })
   
   observe({
     updatePickerInput(session, "probtype_select", choices = c(probtype_choices()))
+  })
+  
+  duration_choices <- reactive({
+    unique(survey_data[survey_data$date >= input$daterange[1] & survey_data$date <= input$daterange[2] & grepl(paste(input$probtype_select, collapse = "|"),survey_data$problem_type_collapse), "duration"])
+  })
+  
+  observe({
+    updatePickerInput(session, "duration_select", choices = c(duration_choices()))
   })
   
   ## -- Set up Data to Respond to Filters -- ##
@@ -35,23 +35,23 @@ function(input, output, session) {
       filter(date <= input$daterange[2])
   })
   
-  # Parking duration  
-  durinput_df <- eventReactive(input$filter_click,{
-    if(is.null(input$duration_select)){
-      dateinput_df()
-    } else{
-      dateinput_df() %>%
-        filter(duration %in% input$duration_select)
-    }
-  })
-  
   # Problem type  
   probinput_df <- eventReactive(input$filter_click,{
     if(is.null(input$probtype_select)){
-      durinput_df()
+      dateinput_df()
     } else{
-      durinput_df() %>%
+      dateinput_df() %>%
         filter(grepl(paste(input$probtype_select, collapse="|"), problem_type_collapse))
+    }
+  })
+  
+  # Parking duration  
+  durinput_df <- eventReactive(input$filter_click,{
+    if(is.null(input$duration_select)){
+      probinput_df()
+    } else{
+      probinput_df() %>%
+        filter(duration %in% input$duration_select)
     }
   })
   
@@ -62,15 +62,15 @@ function(input, output, session) {
   
   # Update data when "Filter Data" is clicked  
   newFilter <- observeEvent(input$filter_click, {
-    values$data <- probinput_df()
+    values$data <- durinput_df()
   })
   
   # Set data back to global when "Reset" is clicked
   observeEvent(input$reset_click, {
     reset("form")
     values$data <- survey_data
-    updatePickerInput(session, "duration_select", choices = unique(survey_data$duration))
     updatePickerInput(session, "probtype_select", choices = unique(capitalize(unlist(survey_data$problem_type))))
+    updatePickerInput(session, "duration_select", choices = unique(survey_data$duration))
   })
   
   # Create error message if dates are blank
@@ -84,8 +84,8 @@ function(input, output, session) {
   ## -- Bookmark -- ##
   
   onBookmark(function(state) {
-    state$values$duration <- input$duration_select
     state$values$probtype <- input$probtype_select
+    state$values$duration <- input$duration_select
   })
   
   survey_filter <- function(df, date_input, dur_input, prob_input){
@@ -109,16 +109,16 @@ function(input, output, session) {
       df %>%
         filter(date >= date_input[1]) %>%
         filter(date <= date_input[2]) %>%
-        filter(duration %in% dur_input) %>%
-        filter(grepl(paste(prob_input, collapse="|"), problem_type_collapse))
+        filter(grepl(paste(prob_input, collapse="|"), problem_type_collapse)) %>%
+        filter(duration %in% dur_input)
     }
   }
   
   ## Execute filter function within onRestored function, set values$data as result
   
   onRestored(function(state) {
-    updatePickerInput(session,"duration_select",selected=state$values$duration)
-    delay(200, updatePickerInput(session,"probtype_select",selected=state$values$probtype))
+    updatePickerInput(session,"probtype_select",selected=state$values$probtype)
+    delay(200, updatePickerInput(session,"duration_select",selected=state$values$duration))
     observe({
       values$data <- survey_filter(survey_data, input$daterange, input$duration_select,input$probtype_select)
     })
@@ -159,7 +159,7 @@ function(input, output, session) {
   output$map <- renderLeaflet({
     if(prob_choices() > 0){
       leaflet(values$data) %>% 
-        addTiles(urlTemplate = street_map, attribution = map_attr) %>%
+        addTiles(urlTemplate = street_map, attribution = map_attr, options = providerTileOptions(minZoom = 10, maxZoom = 17)) %>%
         addMarkers(lng = ~problem_long, lat = ~problem_lat, icon = bikespaceIcon,
                    clusterOptions = markerClusterOptions(showCoverageOnHover = FALSE), 
                    label= marker_labels(), 
@@ -177,6 +177,30 @@ function(input, output, session) {
         addTiles(urlTemplate = street_map, attribution = map_attr) %>%
         setView(lng = -79.3892, lat = 43.6426, zoom = 12)
     }
+  })
+  
+  # Define the map zoom level and map bounds to pass into PDF report
+  user_zoom <- reactive({
+    if(is.null(input$map_zoom)){
+      12
+    }else{
+      input$map_zoom
+    }
+  })
+  
+  user_center <- reactive({
+    bounds <- input$map_bounds
+    user_zoom <- input$map_zoom
+    lon_factor <- ifelse(user_zoom==10,1.007, ifelse(user_zoom==11, 1.004,
+                    ifelse(user_zoom==12, 1.002, ifelse(user_zoom==13,1.0009,
+                      ifelse(user_zoom==14,1.0005, ifelse(user_zoom==15,1.0002,
+                        ifelse(user_zoom==16,1.0001, 1.00005)))))))
+    lat_factor <- ifelse(user_zoom==10,0.993, ifelse(user_zoom==11, 0.997,
+                    ifelse(user_zoom==12, 0.998, ifelse(user_zoom==13,0.9992,
+                      ifelse(user_zoom==14,0.9994, ifelse(user_zoom==15,0.9997,
+                        ifelse(user_zoom==16,0.9999, 0.99995)))))))
+    center <- c(mean(bounds$east, bounds$west)*lon_factor, mean(bounds$north, bounds$south)*lat_factor)
+    center
   })
   
   ##-- Problem Type Bar Chart --#
@@ -207,7 +231,7 @@ function(input, output, session) {
           rename(name = problem_type,
                  y = n) %>% 
           select(y, name, color) %>% 
-          list.parse3()
+          list_parse()
       } else if(n_colors() == 5){
         probtype_df() %>%
           mutate(x = row_number()) %>%
@@ -215,7 +239,7 @@ function(input, output, session) {
           rename(name = problem_type,
                  y = n) %>% 
           select(y, name, color) %>% 
-          list.parse3()
+          list_parse()
       } else if(n_colors() == 4){
         probtype_df() %>%
           mutate(x = row_number()) %>%
@@ -223,7 +247,7 @@ function(input, output, session) {
           rename(name = problem_type,
                  y = n) %>% 
           select(y, name, color) %>% 
-          list.parse3()
+          list_parse()
       } else if(n_colors() == 3){
         probtype_df() %>%
           mutate(x = row_number()) %>%
@@ -231,7 +255,7 @@ function(input, output, session) {
           rename(name = problem_type,
                  y = n) %>% 
           select(y, name, color) %>% 
-          list.parse3()
+          list_parse()
       } else if(n_colors() == 2){
         probtype_df() %>%
           mutate(x = row_number()) %>%
@@ -239,7 +263,7 @@ function(input, output, session) {
           rename(name = problem_type,
                  y = n) %>% 
           select(y, name, color) %>% 
-          list.parse3()
+          list_parse()
       } else{
         probtype_df() %>%
           mutate(x = row_number()) %>%
@@ -247,7 +271,7 @@ function(input, output, session) {
           rename(name = problem_type,
                  y = n) %>% 
           select(y, name, color) %>% 
-          list.parse3()
+          list_parse()
       }
     } else{
       return()
@@ -307,7 +331,7 @@ function(input, output, session) {
         rename(name = weekday, 
                y = n) %>% 
         select(y, name, color) %>% 
-        list.parse3()
+        list_parse()
     } else if(days_range() > -Inf){
       values$data %>%
         count(date) %>%
@@ -393,7 +417,7 @@ function(input, output, session) {
       mutate(yid = rep(c(0,1,2,3),5),
              xid = sort(rep(seq(1:5)-1,4))) %>%
       select(xid, yid, count) %>%
-      list.parse2()
+      list_parse2()
   })
   
   
@@ -461,7 +485,7 @@ function(input, output, session) {
         params <- list(date_1 = input$daterange[1], date_2 = input$daterange[2],
                        dur_input = input$duration_select, prob_input = input$probtype_select,
                        street_input = input$street_name, intersection_input = input$intersection_name,
-                       data = values$data)
+                       data = values$data, zoom = user_zoom(), center = user_center())
         
         setProgress(value = 0.7, detail = "~10 seconds")
         # Knit the document
