@@ -22,8 +22,8 @@ function(request){
                                                           end = max(survey_data$date, na.rm = TRUE),
                                                           format = "mm/dd/yy",
                                                           separator = " - ")),
-                                       pickerInput("duration_select","Duration length:","",multiple = TRUE, options = list(`none-selected-text` = 'Choose one or several')),
                                        pickerInput("probtype_select","Issue type:","",multiple = TRUE, options = list(`none-selected-text` = 'Choose one or several')),
+                                       pickerInput("duration_select","Duration length:","",multiple = TRUE, options = list(`none-selected-text` = 'Choose one or several')),
                                        br(),
                                        actionButton("filter_click", "SEARCH", width = '190px', 
                                                     style="color: #b5c7cf; background-color: #202d33; border-color: #ffffff"),
@@ -37,19 +37,23 @@ function(request){
                                        tags$div(id="download1",
                                                 downloadButton("csv_download", "Download CSV")
                                        ),
-                                       br(),
                                        bookmarkButton(label = "Get Permalink", 
-                                                      style='margin:0px; color: #b5c7cf; background-color: #202d33; border-color: #ffffff'),
-                                       br(),
+                                                      style='
+                                                      width: 190px;
+                                                      margin-top: 6px;
+                                                      margin-right: 5px;
+                                                      margin-bottom: 6px;
+                                                      margin-left: 15px; 
+                                                      color: #b5c7cf; 
+                                                      background-color: #202d33; 
+                                                      border-color: #ffffff'),
                                        tags$div(id="download2", 
                                                 PDF_DownloadButton("pdf_download")),
                                        br()
                                        )
                                        )),
                 dashboardBody(
-                  tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
-                            tags$style(HTML(".main-header .sidebar-toggle:before {
-                                            content: '\\f002';}"))),
+                  tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")),
                   fluidRow(
                     column(width = 3,
                            valueBox(textOutput("total_reports"), HTML(paste("Total Reports",br(), textOutput("date_range"))), 
