@@ -1,18 +1,25 @@
-# Check to see if packages are installed. Install them if they are not, 
-# then load them into the R session.
-check.packages <- function(pkg){
-  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
-  if (length(new.pkg)) 
-    install.packages(new.pkg, dependencies = TRUE)
-  sapply(pkg, require, character.only = TRUE)
-}
-
-packages <- c("shiny", "shinydashboard", "RCurl", "jsonlite", "highcharter",
-              "rvest", "purrr", "tidyr", "dplyr", "stringr", "leaflet", "htmltools",
-              "RColorBrewer", "rmarkdown", "webshot", "shinyBS", "shinyjs", "shinyWidgets",
-              "ggplot2", "Hmisc")
-
-check.packages(packages)
+library("shiny")
+library("shinydashboard")
+library("RCurl")
+library("jsonlite")
+library("igraph")
+library("highcharter")
+library("rvest")
+library("purrr")
+library("tidyr")
+library("dplyr")
+library("stringr")
+library("leaflet")
+library("htmltools")
+library("stringr")
+library("RColorBrewer")
+library("rmarkdown")
+library("webshot")
+library("shinyBS")
+library("shinyjs")
+library("shinyWidgets")
+library("ggplot2")
+library("Hmisc")
 
 ##-- Retrieve and clean data --##
 
