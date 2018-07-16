@@ -1,4 +1,3 @@
-
 function(input, output, session) {
   
   ## -- Sidebar Inputs -- ##
@@ -152,7 +151,7 @@ function(input, output, session) {
   )
   
   # Parameters for MapBox basemap
-  street_map <- "https://api.mapbox.com/styles/v1/arielag/cjhl8uwjg084r2sopg0stjoob/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYXJpZWxhZyIsImEiOiJjamY1dTlseDYxZHB0Mnlsbndsb3BkaTV5In0.SiiSe0JU0cXc6sqeLA4Hcg"
+  street_map <- "https://api.mapbox.com/styles/v1/bikespace/cjjonnw9n477z2sl76c0xo0r8/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYmlrZXNwYWNlIiwiYSI6ImNqY2w5OWVlbDA3YXkycW8ydXd5eXN2MG8ifQ.ue_zOQmPEmHbNa-vG7BwLA"
   
   map_attr <- "© <a href='https://www.mapbox.com/map-feedback/'>Mapbox</a>"
   
