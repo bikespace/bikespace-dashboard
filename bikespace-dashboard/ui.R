@@ -8,7 +8,7 @@ PDF_DownloadButton <- function(outputId, label = " Download PDF"){
 }
 
 function(request){
-  dashboardPage(skin = "black",
+  dashboardPage(skin = "black", title = "BikeSpace Dashboard",
                 dbHeader,
                 dashboardSidebar(
                   useShinyjs(),
