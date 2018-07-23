@@ -1,3 +1,4 @@
+
 function(input, output, session) {
   
   ## -- Sidebar Inputs -- ##
@@ -381,10 +382,10 @@ function(input, output, session) {
   # Generate dataframe with all possible time v. duration combinations
   hours <- c("07-10", "10-13", "13-16", "16-19", "19-07")
   heat_hours <- sort(rep(hours,4))
-  heat_duration <- rep(c("Minutes", "Hours", "Days", "Overnight"), 5)
+  heat_duration <- rep(c("Minutes", "Hours", "Overnight", "Days"), 5)
   
   heat_df <- data.frame(heat_hours, heat_duration)
-  heat_df$heat_duration <- factor(heat_df$heat_duration, levels = c("Overnight", "Days", "Hours", "Minutes"))
+  heat_df$heat_duration <- factor(heat_df$heat_duration, levels = c("Days", "Overnight", "Hours", "Minutes"))
   colnames(heat_df) <- c("time_group", "duration")
   
   # Create frequency count by hour and parking duration from data, dropping NAs
@@ -407,7 +408,7 @@ function(input, output, session) {
   })
   
   # Prepare values for the axes of the heat map
-  y <- c("Overnight", "Days", "Hours", "Minutes")
+  y <- c("Days", "Overnight", "Hours", "Minutes")
   x <- c("07-10", "10-13", "13-16", "16-19", "19-07")
   
   # Convert the dataframe to a series for plotting
@@ -483,7 +484,6 @@ function(input, output, session) {
         # Set up parameters to pass to Rmd document
         params <- list(date_1 = input$daterange[1], date_2 = input$daterange[2],
                        dur_input = input$duration_select, prob_input = input$probtype_select,
-                       street_input = input$street_name, intersection_input = input$intersection_name,
                        data = values$data, zoom = user_zoom(), center = user_center())
         
         setProgress(value = 0.7, detail = "~10 seconds")
