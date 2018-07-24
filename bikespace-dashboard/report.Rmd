@@ -10,8 +10,6 @@ params:
   date_2: NA
   dur_input: NA
   prob_input: NA
-  street_input: NA
-  intersection_input: NA
   zoom: NA
   center: NA
 ---
@@ -28,8 +26,7 @@ knitr::opts_chunk$set(message = FALSE, echo = FALSE, warning = FALSE)
 #------------------------#
 
 # Create dataframe of inputs
-input_names <- list("Date Range", "Issue Type", "Duration Length", "Street",
-                    "Intersection", "Total Number of Reports")
+input_names <- list("Date Range", "Issue Type", "Duration Length", "Total Number of Reports")
 
 report_num <- nrow(params$data)
 
@@ -39,8 +36,7 @@ prob_input <- paste(params$prob_input, collapse="; ")
 
 dur_input <- paste(params$dur_input, collapse="; ")
 
-input_user <- list(date_range, prob_input, dur_input, params$street_input,
-                   params$intersection_input, report_num)
+input_user <- list(date_range, prob_input, dur_input, report_num)
 
 input_df <- cbind(input_names, input_user)
 colnames(input_df) <- c("Data Filters", "User Input")
@@ -263,7 +259,7 @@ library(scales)
 # Generate dataframe with all possible time v. duration combinations
 hours <- c("07-10", "10-13", "13-16", "16-19", "19-07")
 heat_hours <- sort(rep(hours,4))
-heat_duration <- rep(c("Minutes", "Hours", "Days", "Overnight"), 5)
+heat_duration <- rep(c("Minutes", "Hours", "Overnight", "Days"), 5)
   
 heat_df <- data.frame(heat_hours, heat_duration)
 colnames(heat_df) <- c("time_group", "duration")
@@ -282,7 +278,7 @@ heat_data_2 <- heat_data %>%
       replace_na(list(time_group = NA, duration = NA, count = 0))
   
 # Set up as factor variable
-heat_data_2$duration <- factor(heat_data_2$duration, levels = c("Overnight", "Days", "Hours", "Minutes"))
+heat_data_2$duration <- factor(heat_data_2$duration, levels = c("Days", "Overnight", "Hours", "Minutes"))
 
 # Create colour fill variable for heat map
 heat_col_breaks <- c(min(heat_data_2$count),max(heat_data_2$count)*0.2, 

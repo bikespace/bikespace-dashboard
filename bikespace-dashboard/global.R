@@ -20,6 +20,7 @@ library("shinyjs")
 library("shinyWidgets")
 library("ggplot2")
 library("Hmisc")
+library("httr")
 
 ##-- Retrieve and clean data --##
 
