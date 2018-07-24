@@ -130,3 +130,10 @@ h3  {
               background-color: #11bb52;
               .opacity = 0.8;
 }
+
+.leaflet-popup-content-wrapper {
+    background: rgba(233,249,237,0.45);
+    color: #4d4d4d;
+    box-shadow: 3px 3px rgba(0,0,0,0.33);
+    padding: 4px;
+}

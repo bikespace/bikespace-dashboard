@@ -137,13 +137,6 @@ function(input, output, session) {
   
   ##-- Map Visualization --#
   
-  # Create label for each marker on the map
-  marker_labels <- reactive({sprintf(
-    "Problem Type: %s<br/>Duration: %s<br/>Comment: %s",
-    values$data[,"problem_type_collapse"], values$data[,"duration"], values$data[,"comment"]
-  ) %>% lapply(htmltools::HTML)
-  })
-  
   # Create bikespace icon for map
   bikespaceIcon <- makeIcon(
     iconUrl = "https://s3.amazonaws.com/bikespace-dashboard-assets/pins/DB_Logo_Pin.png",
@@ -156,21 +149,25 @@ function(input, output, session) {
   
   map_attr <- "© <a href='https://www.mapbox.com/map-feedback/'>Mapbox</a>"
   
+  # Popup image link
+  pop_img_base <- "https://s3.amazonaws.com/bikeparking/"
+  
   output$map <- renderLeaflet({
     if(prob_choices() > 0){
       leaflet(values$data) %>% 
         addTiles(urlTemplate = street_map, attribution = map_attr, options = providerTileOptions(minZoom = 10, maxZoom = 17)) %>%
         addMarkers(lng = ~problem_long, lat = ~problem_lat, icon = bikespaceIcon,
                    clusterOptions = markerClusterOptions(showCoverageOnHover = FALSE), 
-                   label= marker_labels(), 
-                   labelOptions = labelOptions(noHide = F, textsize = "12px",
-                                  style = list("background-color" = "rgba(242,242,242,0.45)",
-                                               "color" = "#4d4d4d",
-                                               "box-shadow" = "3px 3px rgba(0,0,0,0.25)",
-                                               "border-color" = "rgba(17,187,82,0.5)",
-                                               "padding" = "9px",
-                                               "border-width" = "thin")),
-                   options = markerOptions(riseOnHover = TRUE)) %>%
+                   popup = paste0("<img src = ", pop_img_base,values$data[,"pic"], ">", 
+                                  "<br>", "<br>",
+                                  "<b>Problem Type: </b>",
+                                  values$data[,"problem_type_collapse"],
+                                  "<br>",
+                                  "<b> Duration: </b>",
+                                  values$data[,"duration"],
+                                  "<br>",
+                                  "<b> Comment: </b>",
+                                  values$data[,"comment"])) %>%
         setView(lng = -79.3892, lat = 43.6426, zoom = 12)
     } else{
       leaflet() %>% 
