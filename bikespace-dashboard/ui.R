@@ -1,5 +1,6 @@
 
-dbHeader <- dashboardHeader()
+dbHeader <- dashboardHeader(tags$li(class = "dropdown",
+                                    tags$a(tags$img(height = '20', width= '140', src="weekly_text.png"))))
 dbHeader$children[[2]]$children <-  tags$a(tags$img(src='header_logo.png',height='35',width='175'))
 
 PDF_DownloadButton <- function(outputId, label = " Download PDF"){
