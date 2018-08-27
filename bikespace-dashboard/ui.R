@@ -1,5 +1,6 @@
 
-dbHeader <- dashboardHeader()
+dbHeader <- dashboardHeader(tags$li(class = "dropdown",
+                                    tags$a(tags$img(height = '20', width= '140', src="weekly_text.png"))))
 dbHeader$children[[2]]$children <-  tags$a(tags$img(src='header_logo.png',height='35',width='175'))
 
 PDF_DownloadButton <- function(outputId, label = " Download PDF"){
@@ -24,6 +25,11 @@ function(request){
                                                           separator = " - ")),
                                        pickerInput("probtype_select","Issue type:","",multiple = TRUE, options = list(`none-selected-text` = 'Choose one or several')),
                                        pickerInput("duration_select","Duration length:","",multiple = TRUE, options = list(`none-selected-text` = 'Choose one or several')),
+                                       div(id="form2",
+                                           textInput("street_select", "Street:", placeholder = "eg. 'King'")),
+                                       conditionalPanel("input.street_select != ''", 
+                                                        pickerInput("intersection_select", "Street Intersection:", "",multiple = TRUE, 
+                                                                    options = list(`none-selected-text` = 'Choose one or several'))),
                                        br(),
                                        actionButton("filter_click", "SEARCH", width = '190px', 
                                                     style="color: #b5c7cf; background-color: #202d33; border-color: #ffffff"),

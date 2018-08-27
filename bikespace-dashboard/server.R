@@ -19,6 +19,16 @@ function(input, output, session) {
     updatePickerInput(session, "duration_select", choices = c(duration_choices()))
   })
   
+  intersection_choices <- reactive({
+    unique(survey_data[survey_data$date >= input$daterange[1] & survey_data$date <= input$daterange[2] 
+                       & grepl(paste(input$probtype_select, collapse = "|"),survey_data$problem_type_collapse) 
+                       & grepl(tolower(input$street_select), tolower(survey_data$intersection)), "intersection"])
+  })
+  
+  observe({
+    updatePickerInput(session, "intersection_select", choices = c(intersection_choices()))
+  })
+  
   ## -- Set up Data to Respond to Filters -- ##
   
   # Set up reactive data format
@@ -55,6 +65,19 @@ function(input, output, session) {
     }
   })
   
+  # Street intersection
+  street_df <- eventReactive(input$filter_click,{
+    if(is.null(input$street_select) & is.null(input$intersection_select)){
+      durinput_df()
+    }else if(is.null(input$intersection_select)){
+      durinput_df() %>%
+        filter(grepl(tolower(input$street_select), tolower(intersection)))
+    } else{
+      durinput_df() %>%
+        filter(grepl(tolower(input$intersection_select), tolower(intersection)))
+    }
+  })
+  
   prob_choices <- reactive({
     df <- data.frame(unlist(values$data[,"problem_type"]))
     nrow(df)
@@ -62,7 +85,7 @@ function(input, output, session) {
   
   # Update data when "Filter Data" is clicked  
   newFilter <- observeEvent(input$filter_click, {
-    values$data <- durinput_df()
+    values$data <- street_df()
   })
   
   # Set data back to global when "Reset" is clicked
@@ -71,6 +94,7 @@ function(input, output, session) {
     values$data <- survey_data
     updatePickerInput(session, "probtype_select", choices = unique(capitalize(unlist(survey_data$problem_type))))
     updatePickerInput(session, "duration_select", choices = unique(survey_data$duration))
+    reset("form2")
   })
   
   # Create error message if dates are blank
@@ -86,6 +110,8 @@ function(input, output, session) {
   onBookmark(function(state) {
     state$values$probtype <- input$probtype_select
     state$values$duration <- input$duration_select
+    state$values$street <- input$street_select
+    state$values$intersection <- input$intersection_select
   })
   
   survey_filter <- function(df, date_input, dur_input, prob_input){
@@ -137,13 +163,6 @@ function(input, output, session) {
   
   ##-- Map Visualization --#
   
-  # Create label for each marker on the map
-  marker_labels <- reactive({sprintf(
-    "Problem Type: %s<br/>Duration: %s<br/>Comment: %s",
-    values$data[,"problem_type_collapse"], values$data[,"duration"], values$data[,"comment"]
-  ) %>% lapply(htmltools::HTML)
-  })
-  
   # Create bikespace icon for map
   bikespaceIcon <- makeIcon(
     iconUrl = "https://s3.amazonaws.com/bikespace-dashboard-assets/pins/DB_Logo_Pin.png",
@@ -156,21 +175,25 @@ function(input, output, session) {
   
   map_attr <- "© <a href='https://www.mapbox.com/map-feedback/'>Mapbox</a>"
   
+  # Popup image link
+  pop_img_base <- "https://s3.amazonaws.com/bikeparking/"
+  
   output$map <- renderLeaflet({
     if(prob_choices() > 0){
       leaflet(values$data) %>% 
         addTiles(urlTemplate = street_map, attribution = map_attr, options = providerTileOptions(minZoom = 10, maxZoom = 17)) %>%
         addMarkers(lng = ~problem_long, lat = ~problem_lat, icon = bikespaceIcon,
                    clusterOptions = markerClusterOptions(showCoverageOnHover = FALSE), 
-                   label= marker_labels(), 
-                   labelOptions = labelOptions(noHide = F, textsize = "12px",
-                                  style = list("background-color" = "rgba(242,242,242,0.45)",
-                                               "color" = "#4d4d4d",
-                                               "box-shadow" = "3px 3px rgba(0,0,0,0.25)",
-                                               "border-color" = "rgba(17,187,82,0.5)",
-                                               "padding" = "9px",
-                                               "border-width" = "thin")),
-                   options = markerOptions(riseOnHover = TRUE)) %>%
+                   popup = paste0("<img src = ", pop_img_base,values$data[,"pic"], ">", 
+                                  "<br>", "<br>",
+                                  "<b>Problem Type: </b>",
+                                  values$data[,"problem_type_collapse"],
+                                  "<br>",
+                                  "<b> Duration: </b>",
+                                  values$data[,"duration"],
+                                  "<br>",
+                                  "<b> Comment: </b>",
+                                  values$data[,"comment"])) %>%
         setView(lng = -79.3892, lat = 43.6426, zoom = 12)
     } else{
       leaflet() %>% 

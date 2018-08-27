@@ -26,51 +26,37 @@ library("httr")
 
 # Data from API
 
-url <- "https://torontobikeparking-staging.herokuapp.com/api/survey?format=json"
+url <- "https://s3.amazonaws.com/bikespace-dashboard-assets/dashboard.json"
 doc <- getURL(url)
-api_data <- fromJSON(doc, flatten = TRUE)
+api_data <- as.data.frame(fromJSON(doc, flatten = TRUE))
 
-survey_data <- api_data[, c("survey.happening", "survey.problem_type", 
-                            "latitude", "longitude", "survey.comment")]
-
-survey_data$datetime <- unlist(sapply(survey_data$survey.happening, function (x) x$date))
+survey_data <- api_data[, c("dashboard.id","dashboard.problem","dashboard.latitude","dashboard.longitude",
+                            "dashboard.intersection","dashboard.comments","dashboard.duration", "dashboard.time", 
+                            "dashboard.pic")]
 
 # TEMPORARY SOLUTION FOR DURATION, CHANGE WHEN UX SET
 # Issue is that there are multiple values for duration, should be mutually exclusive
-survey_data$duration <- unlist(sapply(survey_data$survey.happening, function (x) x$time))[1:nrow(survey_data)]
+survey_data$dashboard.duration <- unlist(survey_data$dashboard.duration)[1:nrow(survey_data)]
 
 # Also old duration categories in the data
-survey_data$duration <- if_else(grepl("hour", survey_data$duration), "hours",
-                                if_else(grepl("overnight", survey_data$duration), "overnight",
-                                        survey_data$duration))
+survey_data$dashboard.duration <- if_else(grepl("hour", survey_data$dashboard.duration), "hours", survey_data$dashboard.duration)
 
-survey_data$duration <- capitalize(survey_data$duration)
+survey_data$dashboard.duration <- capitalize(survey_data$dashboard.duration)
 
 # Extract date and time from datetime variable
-survey_data$date <- substr(survey_data$datetime,1,10)
-survey_data$time <- substr(survey_data$datetime,12,19)
+survey_data$date <- substr(survey_data$dashboard.time,1,10)
+survey_data$time <- substr(survey_data$dashboard.time,12,19)
 
 # Format date and time variables
 survey_data$date <- as.Date(strptime(survey_data$date, "%Y-%m-%d"))
 survey_data$time <- strptime(survey_data$time, "%H:%M:%S")
 
-# TEMPORARY SOLUTION FOR DATE, CHANGE WHEN UX SET
-# Issue is that dates occuring after present date are present
-survey_data <- survey_data[survey_data$date <= Sys.Date(),]
-
-# Drop happening and datetime variables
-survey_data <- survey_data[, !(colnames(survey_data) %in% c("survey.happening", "datetime"))]
-
-# TEMPORARY SOLUTION FOR PROBLEM_TYPE, CHANGE WHEN UX SET
-# Remove problem types not part of current app, and take out NULL values
-prob_type_exclude <- c("badly", "vandalized", "broken", "unusable")
-
-survey_data <- survey_data[!grepl(paste(prob_type_exclude, collapse="|"), survey_data$survey.problem_type) 
-                           & survey_data$survey.problem_type != "NULL",]
+# Drop dashboard.time variables
+survey_data <- survey_data[, !(colnames(survey_data) %in% c("dashboard.time"))]
 
 # Clean problem_type field so that lists (multiple problem types) in the field are
 # strings
-survey_data$problem_type_collapse <- sapply(survey_data$survey.problem_type, paste, collapse="; ")
+survey_data$problem_type_collapse <- sapply(survey_data$dashboard.problem, paste, collapse="; ")
 
 # Capitalize each problem type in field using function
 maketitle = function(txt){
@@ -93,8 +79,9 @@ survey_data$time_group <- ifelse(survey_data$hour %in% c(7,8,9), "07-10",
                                                       ifelse(is.na(survey_data$hour), NA,"19-07")))))
 
 # Rename variables
-colnames(survey_data) <- c("problem_type", "problem_lat","problem_long","comment","duration",
-                           "date", "time","problem_type_collapse", "weekday", "hour", "time_group")
+colnames(survey_data) <- c("id","problem_type", "problem_lat","problem_long","intersection",
+                           "comment","duration","pic","date", "time","problem_type_collapse", 
+                           "weekday", "hour", "time_group")
 
 # Drop report time variable
 survey_data <- survey_data[, !(colnames(survey_data) %in% c("time"))]
