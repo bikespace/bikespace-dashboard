@@ -30,8 +30,8 @@ url <- "https://s3.amazonaws.com/bikespace-dashboard-assets/dashboard.json"
 doc <- getURL(url)
 api_data <- as.data.frame(fromJSON(doc, flatten = TRUE))
 
-survey_data <- api_data[, c("dashboard.problem","dashboard.latitude","dashboard.longitude",
-                            "dashboard.comments","dashboard.duration", "dashboard.time", 
+survey_data <- api_data[, c("dashboard.id","dashboard.problem","dashboard.latitude","dashboard.longitude",
+                            "dashboard.intersection","dashboard.comments","dashboard.duration", "dashboard.time", 
                             "dashboard.pic")]
 
 # TEMPORARY SOLUTION FOR DURATION, CHANGE WHEN UX SET
@@ -79,8 +79,9 @@ survey_data$time_group <- ifelse(survey_data$hour %in% c(7,8,9), "07-10",
                                                       ifelse(is.na(survey_data$hour), NA,"19-07")))))
 
 # Rename variables
-colnames(survey_data) <- c("problem_type", "problem_lat","problem_long","comment","duration","pic",
-                           "date", "time","problem_type_collapse", "weekday", "hour", "time_group")
+colnames(survey_data) <- c("id","problem_type", "problem_lat","problem_long","intersection",
+                           "comment","duration","pic","date", "time","problem_type_collapse", 
+                           "weekday", "hour", "time_group")
 
 # Drop report time variable
 survey_data <- survey_data[, !(colnames(survey_data) %in% c("time"))]

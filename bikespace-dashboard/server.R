@@ -19,6 +19,16 @@ function(input, output, session) {
     updatePickerInput(session, "duration_select", choices = c(duration_choices()))
   })
   
+  intersection_choices <- reactive({
+    unique(survey_data[survey_data$date >= input$daterange[1] & survey_data$date <= input$daterange[2] 
+                       & grepl(paste(input$probtype_select, collapse = "|"),survey_data$problem_type_collapse) 
+                       & grepl(tolower(input$street_select), tolower(survey_data$intersection)), "intersection"])
+  })
+  
+  observe({
+    updatePickerInput(session, "intersection_select", choices = c(intersection_choices()))
+  })
+  
   ## -- Set up Data to Respond to Filters -- ##
   
   # Set up reactive data format
@@ -55,6 +65,19 @@ function(input, output, session) {
     }
   })
   
+  # Street intersection
+  street_df <- eventReactive(input$filter_click,{
+    if(is.null(input$street_select) & is.null(input$intersection_select)){
+      durinput_df()
+    }else if(is.null(input$intersection_select)){
+      durinput_df() %>%
+        filter(grepl(tolower(input$street_select), tolower(intersection)))
+    } else{
+      durinput_df() %>%
+        filter(grepl(tolower(input$intersection_select), tolower(intersection)))
+    }
+  })
+  
   prob_choices <- reactive({
     df <- data.frame(unlist(values$data[,"problem_type"]))
     nrow(df)
@@ -62,7 +85,7 @@ function(input, output, session) {
   
   # Update data when "Filter Data" is clicked  
   newFilter <- observeEvent(input$filter_click, {
-    values$data <- durinput_df()
+    values$data <- street_df()
   })
   
   # Set data back to global when "Reset" is clicked
@@ -71,6 +94,7 @@ function(input, output, session) {
     values$data <- survey_data
     updatePickerInput(session, "probtype_select", choices = unique(capitalize(unlist(survey_data$problem_type))))
     updatePickerInput(session, "duration_select", choices = unique(survey_data$duration))
+    reset("form2")
   })
   
   # Create error message if dates are blank
@@ -86,6 +110,8 @@ function(input, output, session) {
   onBookmark(function(state) {
     state$values$probtype <- input$probtype_select
     state$values$duration <- input$duration_select
+    state$values$street <- input$street_select
+    state$values$intersection <- input$intersection_select
   })
   
   survey_filter <- function(df, date_input, dur_input, prob_input){
