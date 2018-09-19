@@ -68,6 +68,9 @@ maketitle = function(txt){
 
 survey_data$problem_type_collapse <- sapply(survey_data$problem_type_collapse, maketitle)
 
+# Replace 'Badly' with 'Abandonded'
+survey_data$problem_type_collapse <- gsub("Badly", "Abandoned", survey_data$problem_type_collapse)
+
 # Create date, weekday and hour variables
 survey_data$weekday <- weekdays(survey_data$date, abbreviate = TRUE)
 survey_data$hour <- as.numeric(format(survey_data$time, format="%H"))
