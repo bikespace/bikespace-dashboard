@@ -55,6 +55,10 @@ function(request){
                                                       border-color: #ffffff'),
                                        tags$div(id="download2", 
                                                 PDF_DownloadButton("pdf_download")),
+                                       br(),
+                                       uiOutput("odbl_text"),
+                                       br(),
+                                       uiOutput("dbcl_text"),
                                        br()
                                        )
                                        )),

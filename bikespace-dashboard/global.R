@@ -36,7 +36,9 @@ survey_data <- api_data[, c("dashboard.id","dashboard.problem","dashboard.latitu
 
 # TEMPORARY SOLUTION FOR DURATION, CHANGE WHEN UX SET
 # Issue is that there are multiple values for duration, should be mutually exclusive
+# Exclude entries with multiple duration values (n=7)
 survey_data$dashboard.duration <- unlist(survey_data$dashboard.duration)[1:nrow(survey_data)]
+survey_data <-survey_data[!grepl(",", survey_data$dashboard.duration), ]
 
 # Also old duration categories in the data
 survey_data$dashboard.duration <- if_else(grepl("hour", survey_data$dashboard.duration), "hours", survey_data$dashboard.duration)
@@ -58,6 +60,9 @@ survey_data <- survey_data[, !(colnames(survey_data) %in% c("dashboard.time"))]
 # strings
 survey_data$problem_type_collapse <- sapply(survey_data$dashboard.problem, paste, collapse="; ")
 
+# Also replace commas with semi-colons for CSV export
+survey_data$problem_type_collapse <- gsub(",", ";", survey_data$problem_type_collapse)
+
 # Capitalize each problem type in field using function
 maketitle = function(txt){
   theletters = strsplit(txt,'')[[1]]
@@ -70,6 +75,9 @@ survey_data$problem_type_collapse <- sapply(survey_data$problem_type_collapse, m
 
 # Replace 'Badly' with 'Abandonded'
 survey_data$problem_type_collapse <- gsub("Badly", "Abandoned", survey_data$problem_type_collapse)
+
+# Drop NA (n=1)
+survey_data <- survey_data[!grepl("NA", survey_data$problem_type_collapse),]
 
 # Create date, weekday and hour variables
 survey_data$weekday <- weekdays(survey_data$date, abbreviate = TRUE)
