@@ -4,7 +4,7 @@ function(input, output, session) {
   ## -- Sidebar Inputs -- ##
   
   probtype_choices <- reactive({
-    unique(capitalize(unlist(survey_data[survey_data$date >= input$daterange[1] & survey_data$date <= input$daterange[2], "problem_type"])))
+    unique(str_trim(unlist(str_split(survey_data[survey_data$date >= input$daterange[1] & survey_data$date <= input$daterange[2], "problem_type_collapse"], "[;]"))))
   })
   
   observe({
@@ -92,7 +92,7 @@ function(input, output, session) {
   observeEvent(input$reset_click, {
     reset("form")
     values$data <- survey_data
-    updatePickerInput(session, "probtype_select", choices = unique(capitalize(unlist(survey_data$problem_type))))
+    updatePickerInput(session, "probtype_select", choices = unique(str_trim(unlist(str_split(survey_data$problem_type_collapse, "[;]")))))
     updatePickerInput(session, "duration_select", choices = unique(survey_data$duration))
     reset("form2")
   })
@@ -159,6 +159,30 @@ function(input, output, session) {
   output$date_range <- renderText({
     paste(format(min(values$data[,"date"], na.rm = TRUE), "%Y/%m/%d"), 
           "-", format(max(values$data[,"date"], na.rm = TRUE), "%Y/%m/%d"))
+  })
+  
+  ##-- Open Data Text --#
+  odbl_link <- a("Open Database License", href="http://opendatacommons.org/licenses/odbl/1.0/")
+  dbcl_link <- a("Database Contents License", href="https://opendatacommons.org/licenses/dbcl/1.0/")
+  
+  output$odbl_text <- renderUI({
+    tagList("The BikeSpace database", 
+            tags$br(),
+            "is made available",
+            tags$br(),
+            "under the", 
+            tags$br(),
+            odbl_link)
+  })
+  
+  output$dbcl_text <- renderUI({
+    tagList("Any rights in individual", 
+            tags$br(),
+            "contents of the database",
+            tags$br(),
+            "are licensed under the",
+            tags$br(),
+            dbcl_link)
   })
   
   ##-- Map Visualization --#
@@ -228,11 +252,11 @@ function(input, output, session) {
   
   ##-- Problem Type Bar Chart --#
   probtype_df <- reactive({
-    unlist_df <- data.frame(capitalize(unlist(values$data[,"problem_type"])))
+    unlist_df <- data.frame(str_trim(unlist(str_split(values$data[,"problem_type_collapse"], "[;]"))))
     if(nrow(unlist_df) > 0){
-      colnames(unlist_df) <- c("problem_type")
+      colnames(unlist_df) <- c("problem_type_collapse")
       unlist_df %>%
-        count(problem_type) %>%
+        count(problem_type_collapse) %>%
         arrange(desc(n)) %>%
         slice(1:6)
     } else{
@@ -251,7 +275,7 @@ function(input, output, session) {
         probtype_df() %>%
           mutate(x = row_number()) %>%
           mutate(color = c("#ff0000", "#ff3300", "#fcb600", "#f2f200", "#9ba39d", "#46e08c")) %>%
-          rename(name = problem_type,
+          rename(name = problem_type_collapse,
                  y = n) %>% 
           select(y, name, color) %>% 
           list_parse()
@@ -259,7 +283,7 @@ function(input, output, session) {
         probtype_df() %>%
           mutate(x = row_number()) %>%
           mutate(color = c("#ff0000", "#ff3300", "#fcb600", "#f2f200", "#46e08c")) %>%
-          rename(name = problem_type,
+          rename(name = problem_type_collapse,
                  y = n) %>% 
           select(y, name, color) %>% 
           list_parse()
@@ -267,7 +291,7 @@ function(input, output, session) {
         probtype_df() %>%
           mutate(x = row_number()) %>%
           mutate(color = c("#ff0000", "#fcb600", "#f2f200", "#46e08c")) %>%
-          rename(name = problem_type,
+          rename(name = problem_type_collapse,
                  y = n) %>% 
           select(y, name, color) %>% 
           list_parse()
@@ -275,7 +299,7 @@ function(input, output, session) {
         probtype_df() %>%
           mutate(x = row_number()) %>%
           mutate(color = c("#ff0000", "#f2f200", "#46e08c")) %>%
-          rename(name = problem_type,
+          rename(name = problem_type_collapse,
                  y = n) %>% 
           select(y, name, color) %>% 
           list_parse()
@@ -283,7 +307,7 @@ function(input, output, session) {
         probtype_df() %>%
           mutate(x = row_number()) %>%
           mutate(color = c("#ff3300", "#46e08c")) %>%
-          rename(name = problem_type,
+          rename(name = problem_type_collapse,
                  y = n) %>% 
           select(y, name, color) %>% 
           list_parse()
@@ -291,7 +315,7 @@ function(input, output, session) {
         probtype_df() %>%
           mutate(x = row_number()) %>%
           mutate(color = c("#00cb47")) %>%
-          rename(name = problem_type,
+          rename(name = problem_type_collapse,
                  y = n) %>% 
           select(y, name, color) %>% 
           list_parse()
