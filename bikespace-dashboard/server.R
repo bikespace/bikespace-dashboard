@@ -506,7 +506,7 @@ function(input, output, session) {
   ##-- Export Data --##
   
   df_csv <- reactive({
-    values$data[, c("problem_type_collapse", "duration", "date", "weekday", "hour", 
+    values$data[, c("id","problem_type_collapse", "duration", "date", "weekday", "hour", 
                     "time_group", "problem_lat", "problem_long", "comment")]
   })
   
