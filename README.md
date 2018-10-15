@@ -43,6 +43,37 @@ The PDF export functionality of the application requires a LaTeX distribution an
 
 Launch the application by running the ```runApp()``` command within the working directory where the application files are located.
 
+## Docker workflow
+
+The entire shiny app has be containerized here, we use the containerized version to ship and deploy through Amazon ECS.
+
+To build a new docker image and tag:
+
+```shell
+docker build -t bikespace/shiny-dashboard:latest .
+```
+
+The image is being hosted on Amazon Elastic Container Registry, contact the administrator for access to the container registry to pull/push the latest docker images
+
+To push a docker image to the Amazon ECR, tag the latest built docker image with the Amazon ECR registry.
+
+```shell
+docker tag [IMAGE_ID] [aws_account_id].dkr.ecr.[region].amazonaws.com/[app_name]
+```
+
+To push to ECR, get aws ecr login:
+
+```shell
+aws ecr get-login --no-include-email
+```
+
+This will return a docker login command with the authorization token to be able to push to ECR.
+Once successfully logged in you can push the image you tagged in the previous step.
+
+```shell
+docker push [aws_account_id].dkr.ecs.[region].amazonaws.com/[app_name]
+```
+
 ## Contact
 
 For more information about BikeSpace, check out our [website](http://www.bikespace.ca/)
