@@ -507,13 +507,18 @@ function(input, output, session) {
   
   df_csv <- reactive({
     values$data[, c("id","problem_type_collapse", "duration", "date", "weekday", "hour", 
-                    "time_group", "problem_lat", "problem_long", "comment")]
+                    "time_group", "problem_lat", "problem_long", "pic","comment")]
+  })
+  
+  df_csv_exp <- reactive({
+    df_csv() %>%
+    mutate(pic = paste(pop_img_base, pic, sep=""))
   })
   
   output$csv_download <- downloadHandler(
     filename = "BikeSpace Data.csv",
     content = function(file) {
-      write.csv(df_csv(), file, row.names = FALSE)
+      write.csv(df_csv_exp(), file, row.names = FALSE)
     }
   )
   
