@@ -208,7 +208,7 @@ function(input, output, session) {
         addTiles(urlTemplate = street_map, attribution = map_attr, options = providerTileOptions(minZoom = 10, maxZoom = 17)) %>%
         addMarkers(lng = ~problem_long, lat = ~problem_lat, icon = bikespaceIcon,
                    clusterOptions = markerClusterOptions(showCoverageOnHover = FALSE), 
-                   popup = paste0("<img src = ", pop_img_base,values$data[,"pic"], ">", 
+                   popup = paste0("<img src = ", pop_img_base,values$data[,"pic"], " width = 200>", 
                                   "<br>", "<br>",
                                   "<b>Problem Type: </b>",
                                   values$data[,"problem_type_collapse"],
@@ -216,8 +216,12 @@ function(input, output, session) {
                                   "<b> Duration: </b>",
                                   values$data[,"duration"],
                                   "<br>",
+                                  "<b> Date: </b>",
+                                  values$data[,"date"],
+                                  "<br>",
                                   "<b> Comment: </b>",
-                                  values$data[,"comment"])) %>%
+                                  values$data[,"comment"]), 
+                   popupOptions = popupOptions(minWidth = 200, maxWidth = 200, maxHeight = 200)) %>%
         setView(lng = -79.3892, lat = 43.6426, zoom = 12)
     } else{
       leaflet() %>% 
